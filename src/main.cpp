@@ -12,7 +12,6 @@
 #include <igl/per_vertex_normals.h>
 #include <igl/readOBJ.h>
 
-#include "polyscope/messages.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
 
@@ -20,6 +19,11 @@
 #include <unordered_set>
 #include <utility>
 
+#include "polyscope/persistent_value.h"
+#include "polyscope/render/engine.h"
+#include "polyscope/transformation_gizmo.h"
+#include "polyscope/utilities.h"
+#include "polyscope/widget.h"
 
 // The mesh, Eigen representation
 Eigen::MatrixXd meshV;
@@ -27,19 +31,29 @@ Eigen::MatrixXi meshF;
 
 using namespace Eigen;
 
+using namespace polyscope;
+
+void my_callback()
+{
+	meshV += 0.001*Eigen::MatrixXd::Ones(meshV.rows(), meshV.cols());
+	polyscope::getSurfaceMesh("input mesh")->updateVertexPositions(meshV);
+
+}
+
 int main(int argc, char **argv) {
   // Configure the argument parser
 
 
-
-  // Options
+//	
   polyscope::options::autocenterStructures = true;
   polyscope::view::windowWidth = 1024;
   polyscope::view::windowHeight = 1024;
 
   // Initialize polyscope
   polyscope::init();
-
+  //PersistentValue<glm::mat4> objectTransform("id", glm::mat4(1.0));
+  PersistentValue<glm::mat4> objectTransform("id", glm::mat4(1.0));
+  // Options
   std::string filename = "../spot.obj";
   std::cout << "loading: " << filename << std::endl;
 
@@ -47,13 +61,24 @@ int main(int argc, char **argv) {
   igl::readOBJ(filename, meshV, meshF);
 
   // Register the mesh with Polyscope
-  polyscope::registerSurfaceMesh("input mesh", meshV, meshF);
+  auto mesh = polyscope::registerSurfaceMesh("input mesh", meshV, meshF);
 
   // Add the callback
-  //polyscope::state::userCallback = callback;
+  //polyscope::state::userCallback = my_callback;
 
+  Eigen::VectorXd C = Eigen::MatrixXd::Ones(meshV.rows(), 1);
+ 
+  mesh->addVertexScalarQuantity("random data", C);
   // Show the gui
+ // std::set<Widget>::iterator it;
+  TransformationGizmo gizmo("my_gizmo", objectTransform.get(), &objectTransform);
+  //std::initializer_list<Widget> list(TransformationGizmo("my_gizmo", objectTransform.get(), &objectTransform));
+  //polyscope::state::widgets.insert(it, &gizmo);
+  gizmo.enabled = true;
+	state::widgets.insert(&gizmo);
   polyscope::show();
 
+  
+ 
   return 0;
 }
