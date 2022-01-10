@@ -18,6 +18,7 @@
 #include <iostream>
 #include <unordered_set>
 #include <utility>
+#include <map>
 
 #include "polyscope/persistent_value.h"
 #include "polyscope/render/engine.h"
@@ -38,6 +39,8 @@ void my_callback()
 	meshV += 0.001*Eigen::MatrixXd::Ones(meshV.rows(), meshV.cols());
 	polyscope::getSurfaceMesh("input mesh")->updateVertexPositions(meshV);
 
+	std::cout << glm::to_string(state::gizmos["my_gizmo"]->T) << std::endl;
+	
 }
 
 int main(int argc, char **argv) {
@@ -63,8 +66,7 @@ int main(int argc, char **argv) {
   // Register the mesh with Polyscope
   auto mesh = polyscope::registerSurfaceMesh("input mesh", meshV, meshF);
 
-  // Add the callback
-  //polyscope::state::userCallback = my_callback;
+
 
   Eigen::VectorXd C = Eigen::MatrixXd::Ones(meshV.rows(), 1);
  
@@ -76,6 +78,10 @@ int main(int argc, char **argv) {
   //polyscope::state::widgets.insert(it, &gizmo);
   gizmo.enabled = true;
 	state::widgets.insert(&gizmo);
+//polyscope::state::gizmos.emplace("my_gizmo", &gizmo);
+	state::gizmos["my_gizmo"] = &gizmo;
+	// Add the callback
+	polyscope::state::userCallback = my_callback;
   polyscope::show();
 
   
